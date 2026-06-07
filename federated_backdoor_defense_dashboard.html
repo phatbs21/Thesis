@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Backdoor Defense Dashboard - Thesis Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .sidebar h1 {
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .sidebar h2 {
+            font-size: 14px;
+            color: #95a5a6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ecf0f1;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #34495e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2980b9;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: #34495e;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select option {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .value-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-start:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            margin-top: 10px;
+        }
+
+        .btn-reset:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .thesis-info {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: auto;
+            border-left: 4px solid #3498db;
+        }
+
+        .thesis-info p {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #bdc3c7;
+        }
+
+        /* Main Panel Styles */
+        .main-panel {
+            padding: 30px;
+            background: #f8f9fa;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+        }
+
+        .panel-header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .panel-header h2 {
+            color: #2c3e50;
+            font-size: 24px;
+        }
+
+        .round-counter {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .visualization-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .visualization-card h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Network Visualization */
+        #network-canvas {
+            width: 100%;
+            height: 350px;
+            background: #fafafa;
+            border-radius: 10px;
+        }
+
+        /* PCA Projection */
+        #pca-canvas {
+            width: 100%;
+            height: 350px;
+            background: #fafafa;
+            border-radius: 10px;
+        }
+
+        /* Metrics Chart */
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        /* Status indicators */
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            background: #ecf0f1;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .status-item span {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>🛡️ FL Backdoor Defense</h1>
+            
+            <div class="thesis-info">
+                <p><strong>Thesis:</strong> A Distribution-Aware Method for Backdoor Defense in Federated Learning</p>
+            </div>
+
+            <div class="control-group">
+                <h2>Network Configuration</h2>
+                <label>Total Clients</label>
+                <div class="slider-container">
+                    <input type="range" id="totalClients" min="5" max="50" value="10">
+                    <div class="value-display" id="totalClientsValue">10</div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Malicious Clients (Attackers)</label>
+                <div class="slider-container">
+                    <input type="range" id="maliciousClients" min="1" max="10" value="2">
+                    <div class="value-display" id="maliciousClientsValue">2</div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h2>Attack Settings</h2>
+                <label>Trigger Type</label>
+                <select id="triggerType">
+                    <option value="square">White Square Pattern</option>
+                    <option value="noise">Noise Pattern</option>
+                    <option value="pixel">Single Pixel Trigger</option>
+                    <option value="corner">Corner Trigger</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <h2>Defense Method</h2>
+                <label>Aggregation Strategy</label>
+                <select id="defenseMethod">
+                    <option value="none">No Defense (FedAvg)</option>
+                    <option value="median">Median Aggregation (Baseline)</option>
+                    <option value="trimmed">Trimmed Mean</option>
+                    <option value="distribution">Distribution-Aware Method (Ours) ⭐</option>
+                </select>
+            </div>
+
+            <button class="btn-start" id="btnStart">🚀 Start Training</button>
+            <button class="btn-start btn-reset" id="btnReset">🔄 Reset</button>
+
+            <div class="status-bar">
+                <div class="status-item">Round: <span id="currentRound">0</span></div>
+                <div class="status-item">Detected: <span id="detectedCount">0</span></div>
+                <div class="status-item">Accuracy: <span id="accuracyDisplay">-</span></div>
+            </div>
+        </div>
+
+        <!-- Main Panel -->
+        <div class="main-panel">
+            <div class="panel-header">
+                <h2>Real-Time Visualization Dashboard</h2>
+                <div class="round-counter">Round: <span id="roundCounter">0</span>/50</div>
+            </div>
+
+            <!-- Network Visualization -->
+            <div class="visualization-card">
+                <h3>🌐 Federated Learning Network</h3>
+                <canvas id="network-canvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>Normal Client</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>Malicious Client</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #95a5a6;"></div>
+                        <span>Detected & Blocked</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f39c12;"></div>
+                        <span>Global Server</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PCA Projection -->
+            <div class="visualization-card">
+                <h3>📊 Real-time Parameter Projection (PCA)</h3>
+                <canvas id="pca-canvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(52, 152, 219, 0.6);"></div>
+                        <span>Benign Updates</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(231, 76, 60, 0.6);"></div>
+                        <span>Malicious Updates</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="border: 2px solid #27ae60; background: transparent;"></div>
+                        <span>Distribution Boundary (Ours)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metrics Chart -->
+            <div class="visualization-card" style="grid-column: 1 / -1;">
+                <h3>📈 Performance Metrics Over Training Rounds</h3>
+                <div class="chart-container">
+                    <canvas id="metricsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let trainingActive = false;
+        let currentRound = 0;
+        let totalClients = 10;
+        let maliciousClients = 2;
+        let detectedMalicious = new Set();
+        let animationFrame = null;
+        
+        // Chart instances
+        let metricsChart = null;
+        let networkCtx = null;
+        let pcaCtx = null;
+
+        // Data storage
+        let accuracyHistory = [];
+        let attackSuccessHistory = [];
+        let clientPositions = [];
+        let pcaPoints = [];
+
+        // Initialize when DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            initializeCanvas();
+            drawNetwork();
+            drawPCA();
+            initializeMetricsChart();
+        });
+
+        function initializeEventListeners() {
+            // Sliders
+            document.getElementById('totalClients').addEventListener('input', function(e) {
+                totalClients = parseInt(e.target.value);
+                document.getElementById('totalClientsValue').textContent = totalClients;
+                document.getElementById('maliciousClients').max = Math.floor(totalClients * 0.4);
+                if (maliciousClients > document.getElementById('maliciousClients').max) {
+                    maliciousClients = document.getElementById('maliciousClients').max;
+                    document.getElementById('maliciousClients').value = maliciousClients;
+                    document.getElementById('maliciousClientsValue').textContent = maliciousClients;
+                }
+                resetSimulation();
+            });
+
+            document.getElementById('maliciousClients').addEventListener('input', function(e) {
+                maliciousClients = parseInt(e.target.value);
+                document.getElementById('maliciousClientsValue').textContent = maliciousClients;
+                resetSimulation();
+            });
+
+            // Buttons
+            document.getElementById('btnStart').addEventListener('click', startTraining);
+            document.getElementById('btnReset').addEventListener('click', resetSimulation);
+        }
+
+        function initializeCanvas() {
+            const networkCanvas = document.getElementById('network-canvas');
+            const pcaCanvas = document.getElementById('pca-canvas');
+            
+            // Set canvas resolution
+            const networkRect = networkCanvas.getBoundingClientRect();
+            networkCanvas.width = networkRect.width * 2;
+            networkCanvas.height = networkRect.height * 2;
+            networkCtx = networkCanvas.getContext('2d');
+            networkCtx.scale(2, 2);
+
+            const pcaRect = pcaCanvas.getBoundingClientRect();
+            pcaCanvas.width = pcaRect.width * 2;
+            pcaCanvas.height = pcaRect.height * 2;
+            pcaCtx = pcaCanvas.getContext('2d');
+            pcaCtx.scale(2, 2);
+        }
+
+        function initializeMetricsChart() {
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            
+            metricsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Main Task Accuracy (%)',
+                            data: [],
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Attack Success Rate (%)',
+                            data: [],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Training Round'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Percentage (%)'
+                            },
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 300
+                    }
+                }
+            });
+        }
+
+        function resetSimulation() {
+            trainingActive = false;
+            currentRound = 0;
+            detectedMalicious.clear();
+            accuracyHistory = [];
+            attackSuccessHistory = [];
+            clientPositions = [];
+            pcaPoints = [];
+
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
+
+            // Update displays
+            document.getElementById('roundCounter').textContent = '0';
+            document.getElementById('currentRound').textContent = '0';
+            document.getElementById('detectedCount').textContent = '0';
+            document.getElementById('accuracyDisplay').textContent = '-';
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStart').textContent = '🚀 Start Training';
+
+            // Reset charts
+            if (metricsChart) {
+                metricsChart.data.labels = [];
+                metricsChart.data.datasets[0].data = [];
+                metricsChart.data.datasets[1].data = [];
+                metricsChart.update();
+            }
+
+            // Redraw visualizations
+            drawNetwork();
+            drawPCA();
+        }
+
+        function startTraining() {
+            if (trainingActive) return;
+            
+            trainingActive = true;
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnStart').textContent = '⏳ Training...';
+
+            // Initialize client positions
+            initializeClientPositions();
+
+            // Start training loop
+            trainingLoop();
+        }
+
+        function initializeClientPositions() {
+            clientPositions = [];
+            pcaPoints = [];
+            
+            const centerX = 250;
+            const centerY = 175;
+            const radius = 120;
+
+            for (let i = 0; i < totalClients; i++) {
+                const angle = (i / totalClients) * 2 * Math.PI;
+                const isMalicious = i < maliciousClients;
+                
+                clientPositions.push({
+                    x: centerX + radius * Math.cos(angle),
+                    y: centerY + radius * Math.sin(angle),
+                    isMalicious: isMalicious,
+                    angle: angle,
+                    active: false
+                });
+
+                // Initialize PCA points
+                const baseX = isMalicious ? 3 + Math.random() * 2 : 0 + Math.random() * 0.5;
+                const baseY = isMalicious ? 3 + Math.random() * 2 : 0 + Math.random() * 0.5;
+                
+                pcaPoints.push({
+                    x: baseX,
+                    y: baseY,
+                    isMalicious: isMalicious,
+                    targetX: baseX,
+                    targetY: baseY
+                });
+            }
+        }
+
+        function trainingLoop() {
+            if (!trainingActive || currentRound >= 50) {
+                trainingActive = false;
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStart').textContent = '🚀 Start Training';
+                return;
+            }
+
+            currentRound++;
+            
+            // Update round displays
+            document.getElementById('roundCounter').textContent = currentRound;
+            document.getElementById('currentRound').textContent = currentRound;
+
+            // Simulate training round
+            simulateRound();
+
+            // Update visualizations
+            updateNetworkVisualization();
+            updatePCAVisualization();
+            updateMetricsChart();
+
+            // Schedule next round
+            animationFrame = setTimeout(trainingLoop, 800);
+        }
+
+        function simulateRound() {
+            const defenseMethod = document.getElementById('defenseMethod').value;
+            
+            // Activate random clients
+            clientPositions.forEach((client, idx) => {
+                client.active = true;
+                
+                // Update PCA targets
+                if (!client.isMalicious) {
+                    // Benign clients cluster together
+                    pcaPoints[idx].targetX = 0.5 + (Math.random() - 0.5) * 0.3;
+                    pcaPoints[idx].targetY = 0.5 + (Math.random() - 0.5) * 0.3;
+                } else {
+                    if (detectedMalicious.has(idx)) {
+                        // Detected malicious clients move to blocked area
+                        pcaPoints[idx].targetX = -2;
+                        pcaPoints[idx].targetY = -2;
+                    } else {
+                        // Malicious clients try to move away
+                        pcaPoints[idx].targetX = 3 + Math.random() * 2;
+                        pcaPoints[idx].targetY = 3 + Math.random() * 2;
+                    }
+                }
+            });
+
+            // Apply defense method
+            if (defenseMethod === 'distribution') {
+                // Our distribution-aware method detects malicious clients faster
+                const detectionProbability = 0.3 + (currentRound / 50) * 0.6;
+                
+                clientPositions.forEach((client, idx) => {
+                    if (client.isMalicious && !detectedMalicious.has(idx)) {
+                        if (Math.random() < detectionProbability) {
+                            detectedMalicious.add(idx);
+                        }
+                    }
+                });
+            } else if (defenseMethod === 'median') {
+                // Median aggregation - slower detection
+                const detectionProbability = 0.1 + (currentRound / 50) * 0.3;
+                
+                clientPositions.forEach((client, idx) => {
+                    if (client.isMalicious && !detectedMalicious.has(idx)) {
+                        if (Math.random() < detectionProbability) {
+                            detectedMalicious.add(idx);
+                        }
+                    }
+                });
+            } else if (defenseMethod === 'trimmed') {
+                // Trimmed mean - moderate detection
+                const detectionProbability = 0.2 + (currentRound / 50) * 0.4;
+                
+                clientPositions.forEach((client, idx) => {
+                    if (client.isMalicious && !detectedMalicious.has(idx)) {
+                        if (Math.random() < detectionProbability) {
+                            detectedMalicious.add(idx);
+                        }
+                    }
+                });
+            }
+
+            // Update detected count
+            document.getElementById('detectedCount').textContent = detectedMalicious.size;
+
+            // Calculate metrics
+            calculateMetrics();
+        }
+
+        function calculateMetrics() {
+            const defenseMethod = document.getElementById('defenseMethod').value;
+            
+            // Calculate accuracy based on defense method and round
+            let baseAccuracy;
+            let attackSuccessRate;
+
+            if (defenseMethod === 'none') {
+                // No defense - accuracy degrades, attack succeeds
+                baseAccuracy = 95 - (currentRound / 50) * 30;
+                attackSuccessRate = 20 + (currentRound / 50) * 70;
+            } else if (defenseMethod === 'median') {
+                // Median - moderate protection
+                baseAccuracy = 92 - (currentRound / 50) * 10;
+                attackSuccessRate = Math.max(0, 80 - (currentRound / 50) * 60);
+            } else if (defenseMethod === 'trimmed') {
+                // Trimmed mean - good protection
+                baseAccuracy = 93 - (currentRound / 50) * 8;
+                attackSuccessRate = Math.max(0, 75 - (currentRound / 50) * 70);
+            } else {
+                // Our distribution-aware method - best protection
+                const detectionRatio = detectedMalicious.size / maliciousClients;
+                baseAccuracy = 94 - (currentRound / 50) * 5 + detectionRatio * 5;
+                attackSuccessRate = Math.max(0, 70 - (currentRound / 50) * 65 - detectionRatio * 30);
+            }
+
+            // Add some noise
+            baseAccuracy += (Math.random() - 0.5) * 3;
+            attackSuccessRate += (Math.random() - 0.5) * 5;
+
+            // Clamp values
+            baseAccuracy = Math.max(0, Math.min(100, baseAccuracy));
+            attackSuccessRate = Math.max(0, Math.min(100, attackSuccessRate));
+
+            accuracyHistory.push(baseAccuracy);
+            attackSuccessHistory.push(attackSuccessRate);
+
+            // Update display
+            document.getElementById('accuracyDisplay').textContent = baseAccuracy.toFixed(1) + '%';
+        }
+
+        function updateNetworkVisualization() {
+            drawNetwork();
+        }
+
+        function drawNetwork() {
+            if (!networkCtx) return;
+
+            const width = networkCtx.canvas.width / 2;
+            const height = networkCtx.canvas.height / 2;
+
+            // Clear canvas
+            networkCtx.clearRect(0, 0, width, height);
+
+            // Draw background gradient
+            const gradient = networkCtx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/2);
+            gradient.addColorStop(0, '#f8f9fa');
+            gradient.addColorStop(1, '#ecf0f1');
+            networkCtx.fillStyle = gradient;
+            networkCtx.fillRect(0, 0, width, height);
+
+            // Draw server at center
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const serverRadius = 30;
+
+            // Server glow effect
+            const serverGlow = networkCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, serverRadius * 2);
+            serverGlow.addColorStop(0, 'rgba(243, 156, 18, 0.3)');
+            serverGlow.addColorStop(1, 'rgba(243, 156, 18, 0)');
+            networkCtx.fillStyle = serverGlow;
+            networkCtx.beginPath();
+            networkCtx.arc(centerX, centerY, serverRadius * 2, 0, 2 * Math.PI);
+            networkCtx.fill();
+
+            // Server circle
+            networkCtx.beginPath();
+            networkCtx.arc(centerX, centerY, serverRadius, 0, 2 * Math.PI);
+            networkCtx.fillStyle = '#f39c12';
+            networkCtx.fill();
+            networkCtx.strokeStyle = '#e67e22';
+            networkCtx.lineWidth = 3;
+            networkCtx.stroke();
+
+            // Server icon
+            networkCtx.fillStyle = 'white';
+            networkCtx.font = 'bold 16px Arial';
+            networkCtx.textAlign = 'center';
+            networkCtx.textBaseline = 'middle';
+            networkCtx.fillText('Server', centerX, centerY);
+
+            // Draw clients
+            if (clientPositions.length === 0) {
+                // Initialize if empty
+                const radius = 120;
+                for (let i = 0; i < totalClients; i++) {
+                    const angle = (i / totalClients) * 2 * Math.PI;
+                    const isMalicious = i < maliciousClients;
+                    
+                    clientPositions.push({
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle),
+                        isMalicious: isMalicious,
+                        angle: angle,
+                        active: false
+                    });
+                }
+            }
+
+            clientPositions.forEach((client, idx) => {
+                const clientRadius = 15;
+                
+                // Determine color
+                let color;
+                if (detectedMalicious.has(idx)) {
+                    color = '#95a5a6'; // Detected/blocked
+                } else if (client.isMalicious) {
+                    color = '#e74c3c'; // Malicious
+                } else {
+                    color = '#3498db'; // Normal
+                }
+
+                // Draw connection to server if active
+                if (client.active && !detectedMalicious.has(idx)) {
+                    networkCtx.beginPath();
+                    networkCtx.moveTo(client.x, client.y);
+                    networkCtx.lineTo(centerX, centerY);
+                    networkCtx.strokeStyle = client.active ? 'rgba(52, 152, 219, 0.4)' : 'rgba(0, 0, 0, 0.1)';
+                    networkCtx.lineWidth = 2;
+                    networkCtx.setLineDash([5, 5]);
+                    networkCtx.stroke();
+                    networkCtx.setLineDash([]);
+                }
+
+                // Client circle
+                networkCtx.beginPath();
+                networkCtx.arc(client.x, client.y, clientRadius, 0, 2 * Math.PI);
+                networkCtx.fillStyle = color;
+                networkCtx.fill();
+                networkCtx.strokeStyle = 'white';
+                networkCtx.lineWidth = 2;
+                networkCtx.stroke();
+
+                // Add X mark for detected malicious
+                if (detectedMalicious.has(idx)) {
+                    networkCtx.strokeStyle = '#c0392b';
+                    networkCtx.lineWidth = 2;
+                    networkCtx.beginPath();
+                    networkCtx.moveTo(client.x - 8, client.y - 8);
+                    networkCtx.lineTo(client.x + 8, client.y + 8);
+                    networkCtx.moveTo(client.x + 8, client.y - 8);
+                    networkCtx.lineTo(client.x - 8, client.y + 8);
+                    networkCtx.stroke();
+                }
+
+                // Client number
+                networkCtx.fillStyle = 'white';
+                networkCtx.font = 'bold 10px Arial';
+                networkCtx.textAlign = 'center';
+                networkCtx.textBaseline = 'middle';
+                networkCtx.fillText(idx + 1, client.x, client.y);
+            });
+        }
+
+        function updatePCAVisualization() {
+            // Smoothly interpolate PCA points
+            pcaPoints.forEach((point, idx) => {
+                const dx = point.targetX - point.x;
+                const dy = point.targetY - point.y;
+                point.x += dx * 0.1;
+                point.y += dy * 0.1;
+            });
+
+            drawPCA();
+        }
+
+        function drawPCA() {
+            if (!pcaCtx) return;
+
+            const width = pcaCtx.canvas.width / 2;
+            const height = pcaCtx.canvas.height / 2;
+
+            // Clear canvas
+            pcaCtx.clearRect(0, 0, width, height);
+
+            // Draw background
+            pcaCtx.fillStyle = '#fafafa';
+            pcaCtx.fillRect(0, 0, width, height);
+
+            // Draw grid
+            pcaCtx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+            pcaCtx.lineWidth = 1;
+            
+            const gridSize = 30;
+            for (let x = 0; x < width; x += gridSize) {
+                pcaCtx.beginPath();
+                pcaCtx.moveTo(x, 0);
+                pcaCtx.lineTo(x, height);
+                pcaCtx.stroke();
+            }
+            for (let y = 0; y < height; y += gridSize) {
+                pcaCtx.beginPath();
+                pcaCtx.moveTo(0, y);
+                pcaCtx.lineTo(width, y);
+                pcaCtx.stroke();
+            }
+
+            // Draw axes
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            pcaCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            pcaCtx.lineWidth = 2;
+            pcaCtx.beginPath();
+            pcaCtx.moveTo(0, centerY);
+            pcaCtx.lineTo(width, centerY);
+            pcaCtx.moveTo(centerX, 0);
+            pcaCtx.lineTo(centerX, height);
+            pcaCtx.stroke();
+
+            // Axis labels
+            pcaCtx.fillStyle = '#7f8c8d';
+            pcaCtx.font = '12px Arial';
+            pcaCtx.textAlign = 'right';
+            pcaCtx.fillText('PC1', width - 10, centerY - 5);
+            pcaCtx.textAlign = 'center';
+            pcaCtx.fillText('PC2', centerX + 5, 15);
+
+            // Scale factor for visualization
+            const scaleX = width / 10;
+            const scaleY = height / 10;
+
+            // Draw distribution boundary for our method
+            const defenseMethod = document.getElementById('defenseMethod').value;
+            if (defenseMethod === 'distribution' && currentRound > 0) {
+                pcaCtx.strokeStyle = 'rgba(39, 174, 96, 0.4)';
+                pcaCtx.lineWidth = 2;
+                pcaCtx.setLineDash([5, 5]);
+                pcaCtx.beginPath();
+                pcaCtx.ellipse(centerX, centerY, scaleX * 1.5, scaleY * 1.5, 0, 0, 2 * Math.PI);
+                pcaCtx.stroke();
+                pcaCtx.setLineDash([]);
+
+                // Fill with transparent color
+                pcaCtx.fillStyle = 'rgba(39, 174, 96, 0.1)';
+                pcaCtx.fill();
+            }
+
+            // Draw PCA points
+            if (pcaPoints.length === 0 && clientPositions.length > 0) {
+                // Initialize PCA points
+                clientPositions.forEach((client, idx) => {
+                    const baseX = client.isMalicious ? 3 + Math.random() * 2 : 0 + Math.random() * 0.5;
+                    const baseY = client.isMalicious ? 3 + Math.random() * 2 : 0 + Math.random() * 0.5;
+                    
+                    pcaPoints.push({
+                        x: baseX,
+                        y: baseY,
+                        isMalicious: client.isMalicious,
+                        targetX: baseX,
+                        targetY: baseY
+                    });
+                });
+            }
+
+            pcaPoints.forEach((point, idx) => {
+                const plotX = centerX + point.x * scaleX;
+                const plotY = centerY - point.y * scaleY;
+                const pointRadius = 8;
+
+                // Determine color
+                let color;
+                if (detectedMalicious.has(idx)) {
+                    color = 'rgba(149, 165, 166, 0.8)'; // Detected
+                } else if (point.isMalicious) {
+                    color = 'rgba(231, 76, 60, 0.7)'; // Malicious
+                } else {
+                    color = 'rgba(52, 152, 219, 0.7)'; // Normal
+                }
+
+                // Draw point
+                pcaCtx.beginPath();
+                pcaCtx.arc(plotX, plotY, pointRadius, 0, 2 * Math.PI);
+                pcaCtx.fillStyle = color;
+                pcaCtx.fill();
+                pcaCtx.strokeStyle = 'white';
+                pcaCtx.lineWidth = 2;
+                pcaCtx.stroke();
+
+                // Add X for detected
+                if (detectedMalicious.has(idx)) {
+                    pcaCtx.strokeStyle = '#c0392b';
+                    pcaCtx.lineWidth = 2;
+                    pcaCtx.beginPath();
+                    pcaCtx.moveTo(plotX - 5, plotY - 5);
+                    pcaCtx.lineTo(plotX + 5, plotY + 5);
+                    pcaCtx.moveTo(plotX + 5, plotY - 5);
+                    pcaCtx.lineTo(plotX - 5, plotY + 5);
+                    pcaCtx.stroke();
+                }
+            });
+
+            // Draw title
+            pcaCtx.fillStyle = '#2c3e50';
+            pcaCtx.font = 'bold 14px Arial';
+            pcaCtx.textAlign = 'center';
+            pcaCtx.fillText('PCA Projection of Model Updates', centerX, 25);
+        }
+
+        function updateMetricsChart() {
+            if (!metricsChart) return;
+
+            metricsChart.data.labels.push(currentRound);
+            metricsChart.data.datasets[0].data.push(accuracyHistory[accuracyHistory.length - 1]);
+            metricsChart.data.datasets[1].data.push(attackSuccessHistory[attackSuccessHistory.length - 1]);
+
+            // Keep only last 50 points
+            if (metricsChart.data.labels.length > 50) {
+                metricsChart.data.labels.shift();
+                metricsChart.data.datasets[0].data.shift();
+                metricsChart.data.datasets[1].data.shift();
+            }
+
+            metricsChart.update('none'); // Update without full animation
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            initializeCanvas();
+            drawNetwork();
+            drawPCA();
+        });
+    </script>
+</body>
+</html>
